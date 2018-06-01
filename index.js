@@ -10,10 +10,12 @@ const url = require(`url`);
 exports.SUCCESS = "SUCCESS";
 exports.FAILED = "FAILED";
 
-const logStreamUrl = ({AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME}) =>
-    `https://${AWS_REGION}.console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#logEventViewer:group=${AWS_LAMBDA_LOG_GROUP_NAME};stream=${AWS_LAMBDA_LOG_STREAM_NAME}`;
+const logStreamUrl = (region, group, stream) => `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logEventViewer:group=${group};stream=${stream}`;
 
 exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId) {
+
+    const {AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME} = process.env;
+
     const responseBody = JSON.stringify({
         Status,
         PhysicalResourceId,
@@ -21,7 +23,7 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
         StackId,
         RequestId,
         LogicalResourceId,
-        Reason: `See the details in <a href="${logStreamUrl(process.env)}">CloudWatch</a>`,
+        Reason: `See the details in <a href="${logStreamUrl(AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME)}">CloudWatch</a>`,
     });
  
     console.log("Response body:\n", responseBody);
