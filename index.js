@@ -4,32 +4,33 @@
    A copy of the License is located at http://aws.amazon.com/agreement/.
    This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
    See the License for the specific language governing permissions and limitations under the License. */
- 
+const https = require(`https`);
+const url = require(`url`);
+
 exports.SUCCESS = "SUCCESS";
 exports.FAILED = "FAILED";
- 
-exports.send = function(event, context, responseStatus, responseData, physicalResourceId) {
- 
+
+const logStreamUrl = ({AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME}) =>
+    `https://${AWS_REGION}.console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#logEventViewer:group=${AWS_LAMBDA_LOG_GROUP_NAME};stream=${AWS_LAMBDA_LOG_STREAM_NAME}`;
+
+exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId) {
     const responseBody = JSON.stringify({
-        Status: responseStatus,
-        Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
-        PhysicalResourceId: physicalResourceId || context.logStreamName,
-        StackId: event.StackId,
-        RequestId: event.RequestId,
-        LogicalResourceId: event.LogicalResourceId,
-        Data: responseData
+        Status,
+        PhysicalResourceId,
+        Data,
+        StackId,
+        RequestId,
+        LogicalResourceId,
+        Reason: `See the details in <a href="${logStreamUrl(process.env)}">CloudWatch</a>`,
     });
  
     console.log("Response body:\n", responseBody);
- 
-    const https = require("https");
-    const url = require("url");
- 
-    const parsedUrl = url.parse(event.ResponseURL);
+
+    const {hostname, path} = parsedUrl = url.parse(ResponseURL);
     const options = {
-        hostname: parsedUrl.hostname,
+        hostname: hostname,
         port: 443,
-        path: parsedUrl.path,
+        path: path,
         method: "PUT",
         headers: {
             "content-type": "",
@@ -37,14 +38,9 @@ exports.send = function(event, context, responseStatus, responseData, physicalRe
         }
     };
  
-    const request = https.request(options, function(response) {
-        console.log("Status code: " + response.statusCode);
-        console.log("Status message: " + response.statusMessage);
-    });
+    const request = https.request(options, ({statusCode, statusMessage}) => console.log(`Status code: ${statusCode}\nStatus message: ${statusMessage}`));
  
-    request.on("error", function(error) {
-        console.log("send(..) failed executing https.request(..): " + error);
-    });
+    request.on("error", err => console.log(`send(..) failed executing https.request(..): ${err}`));
  
     request.write(responseBody);
     request.end();
