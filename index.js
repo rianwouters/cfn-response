@@ -40,12 +40,10 @@ exports.send = function(event, context, responseStatus, responseData, physicalRe
     const request = https.request(options, function(response) {
         console.log("Status code: " + response.statusCode);
         console.log("Status message: " + response.statusMessage);
-        context.done();
     });
  
     request.on("error", function(error) {
         console.log("send(..) failed executing https.request(..): " + error);
-        context.done();
     });
  
     request.write(responseBody);
