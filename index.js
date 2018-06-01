@@ -28,7 +28,7 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
  
     console.log("Response body:\n", responseBody);
 
-    const {hostname, path} = parsedUrl = url.parse(ResponseURL);
+    const {hostname, path} = url.parse(ResponseURL);
     const options = {
         hostname: hostname,
         port: 443,
