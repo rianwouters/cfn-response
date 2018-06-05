@@ -12,7 +12,7 @@ exports.FAILED = "FAILED";
 
 const logStreamUrl = (region, group, stream) => `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logEventViewer:group=${group};stream=${stream}`;
 
-exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId) {
+exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId, callback) {
 
     const {AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME} = process.env;
 
@@ -28,23 +28,16 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
  
     console.log("Response body:\n", responseBody);
 
-    const {hostname, path} = url.parse(ResponseURL);
-    const options = {
-        hostname: hostname,
-        port: 443,
-        path: path,
+    const options = Object.assign({
         method: "PUT",
         headers: {
             "content-type": "",
             "content-length": responseBody.length
         }
-    };
- 
-    const request = https.request(options, ({statusCode, statusMessage}) => console.log(`Status code: ${statusCode}\nStatus message: ${statusMessage}`));
- 
-    request.on("error", err => console.log(`send(..) failed executing https.request(..): ${err}`));
- 
-    request.write(responseBody);
-    request.end();
+    }, url.parse(ResponseURL));
+
+    https.request(options, ({statusCode, statusMessage}) => callback(statusCode === 200 ? null : new Error(`Status code: ${statusCode}\nStatus message: ${statusMessage}`)));
+        .on("error", callback)
+        .end(responseBody);
 }
 
