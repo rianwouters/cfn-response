@@ -23,7 +23,7 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
         StackId,
         RequestId,
         LogicalResourceId,
-        Reason: `See the details in <a href="${logStreamUrl(AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME)}">CloudWatch</a>`,
+        Reason: `See the details in <a href="${logStreamUrl(AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME)}">CloudWatch log</a>`,
     });
  
     console.log("Response body:\n", responseBody);
@@ -36,8 +36,10 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
         }
     }, url.parse(ResponseURL));
 
-    https.request(options, ({statusCode, statusMessage}) => callback(statusCode === 200 ? null : new Error(`Status code: ${statusCode}\nStatus message: ${statusMessage}`)));
-        .on("error", callback)
-        .end(responseBody);
-}
+    const request = (resolve, reject) =>
+        https.request(options, ({statusCode, statusMessage}) => statusCode === 200 ? resolve() : reject(Object.assign(new Error(statusMessage), {code: statusCode})))
+            .on("error", reject)
+            .end(responseBody);
 
+    return callback ? request(callback, callback) : new Promise(request);
+}
