@@ -12,7 +12,7 @@ exports.FAILED = "FAILED";
 
 const logStreamUrl = (region, group, stream) => `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logEventViewer:group=${group};stream=${stream}`;
 
-exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId, callback) {
+exports.send = ({StackId, RequestId, LogicalResourceId, ResponseURL}, Status, Data, PhysicalResourceId, callback) => {
 
     const {AWS_REGION, AWS_LAMBDA_LOG_GROUP_NAME, AWS_LAMBDA_LOG_STREAM_NAME} = process.env;
 
@@ -42,4 +42,4 @@ exports.send = function({StackId, RequestId, LogicalResourceId, ResponseURL}, St
             .end(responseBody);
 
     return callback ? request(callback, callback) : new Promise(request);
-}
+};
